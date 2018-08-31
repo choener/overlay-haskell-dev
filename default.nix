@@ -1,6 +1,5 @@
 self: super: {
 
-
 # hsDevFunctions provides to attributes: hsShell and hsBuild that enable a
 # development environment and a build environment. In case overrideParDir is
 # given, that directory is scanned for additional packages.
@@ -10,9 +9,17 @@ self: super: {
 # TODO change overrideParDir into a list of such directories.
 
 hsDevFunctions = thisDir: { overrideParDir ? null }:
+  with builtins;
   let
     # check child directories below this one
-    parentContent = builtins.readDir overrideParDir;
+    parentContentSel = {
+      # TODO this does not work with parentDirs right now, since parentDirs
+      # adds full path stuff. Need to fix this!
+      "list" = super.lib.lists.foldl' (s: p: s // readDir p) {} overrideParDir;
+      "null" = [];
+      "path" = readDir overrideParDir;
+    };
+    parentContent = (parentContentSel."${typeOf overrideParDir}");
     # extract sibling folders that contain a default.nix file
     parentDirs = builtins.filter (d: builtins.pathExists (overrideParDir + ("/" + d + "/default.nix"))) (builtins.attrNames parentContent);
     # construct set of names / source directories for override
