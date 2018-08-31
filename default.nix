@@ -13,19 +13,28 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
   let
     # check child directories below this one
     parentContentSel = {
-      # TODO this does not work with parentDirs right now, since parentDirs
-      # adds full path stuff. Need to fix this!
-      "list" = super.lib.lists.foldl' (s: p: s // readDir p) {} overrideParDir;
+      # we have multiple directories with overrides, later ones override
+      # earlier ones.
+      "list" = super.lib.lists.foldl' (s: p: s // eachOverrideParDir p) {} overrideParDir;
+      # actually not needed due to laziness.
       "null" = [];
-      "path" = readDir overrideParDir;
+      # single directory with overrides.
+      "path" = eachOverrideParDir overrideParDir;
     };
-    parentContent = (parentContentSel."${typeOf overrideParDir}");
-    # extract sibling folders that contain a default.nix file
-    parentDirs = builtins.filter (d: builtins.pathExists (overrideParDir + ("/" + d + "/default.nix"))) (builtins.attrNames parentContent);
-    # construct set of names / source directories for override
-    hsSrcSet = builtins.listToAttrs (map (d: {name = "${d}"; value = overrideParDir + ("/" + d);}) parentDirs);
+    eachOverrideParDir = opd:
+      let
+        # extract sibling folders that contain a default.nix file
+        parentDir = builtins.filter (d: builtins.pathExists (overrideParDir + ("/" + d + "/default.nix")))
+                    (builtins.attrNames  (readDir opd));
+        # construct set of names / source directories for override
+        hsSrcSet = builtins.listToAttrs (map (d: {name = "${d}"; value = opd + ("/" + d);}) parentDir);
+      in hsSrcSet;
+    # select how to process based on the type of the pardir argument
+    hsSrcSets = (parentContentSel."${typeOf overrideParDir}");
     # extend the set of packages with source overrides
-    hsPkgs = if (isNull overrideParDir) then self.haskellPackages else self.haskellPackages.extend (self.haskell.lib.packageSourceOverrides hsSrcSet);
+    hsPkgs = if (isNull overrideParDir)
+             then self.haskellPackages
+             else self.haskellPackages.extend (self.haskell.lib.packageSourceOverrides hsSrcSets);
     # name of this module
     # this = builtins.trace (self.cabal-install.patches or null) (baseNameOf thisDir);
     this = (baseNameOf thisDir);
