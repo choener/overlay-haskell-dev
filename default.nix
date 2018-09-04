@@ -6,8 +6,6 @@ self: super: {
 #  > with (import <nixpkgs> {});
 #  > hsDevFunctions ./.
 
-# TODO change overrideParDir into a list of such directories.
-
 hsDevFunctions = thisDir: { overrideParDir ? null }:
   with builtins;
   let
@@ -17,7 +15,7 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
       # earlier ones.
       "list" = super.lib.lists.foldl' (s: p: s // eachOverrideParDir p) {} overrideParDir;
       # actually not needed due to laziness.
-      "null" = [];
+      "null" = {};
       # single directory with overrides.
       "path" = eachOverrideParDir overrideParDir;
     };
@@ -32,13 +30,13 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
     # select how to process based on the type of the pardir argument
     hsSrcSets = (parentContentSel."${typeOf overrideParDir}");
     # extend the set of packages with source overrides
-    hsPkgs = if (isNull overrideParDir)
-             then self.haskellPackages
-             else self.haskellPackages.extend (self.haskell.lib.packageSourceOverrides hsSrcSets);
+    hsPkgs = super.haskellPackages.extend (super.haskell.lib.packageSourceOverrides hsSrcSets);
     # name of this module
     # this = builtins.trace (self.cabal-install.patches or null) (baseNameOf thisDir);
     this = (baseNameOf thisDir);
   in {
+
+    # the hsShell gives a build environment in which we can run @cabal repl / cabal new-repl@
     hsShell = hsPkgs.shellFor {
       packages = p: [ p."${this}" ];
       withHoogle = true;
@@ -46,12 +44,16 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
         self.cabal-install
       ];
     }; # hsShell
+
+    # hsBuild provides the option to completely build the project and place the result symlink
     # nix-build -A hsBuild
     # this shall build and put into ./result
     # the result is a typical ./bin/; ./lib/ etc.
-    hsBuild = hsPkgs.callCabal2nix "${this}" ./. {};
-  }; # return set
+    hsBuild = hsPkgs.callCabal2nix "${this}" thisDir {};
 
+    # provide haskellPackages again
+    haskellPackages = hsPkgs;
+  }; # return set
 
 } # self,super
 
