@@ -22,7 +22,7 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
     eachOverrideParDir = opd:
       let
         # extract sibling folders that contain a default.nix file
-        parentDir = builtins.filter (d: builtins.pathExists (overrideParDir + ("/" + d + "/default.nix")))
+        parentDir = builtins.filter (d: builtins.pathExists (opd + ("/" + d + "/default.nix")))
                     (builtins.attrNames  (readDir opd));
         # construct set of names / source directories for override
         hsSrcSet = builtins.listToAttrs (map (d: {name = "${d}"; value = opd + ("/" + d);}) parentDir);
