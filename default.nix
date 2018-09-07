@@ -30,7 +30,7 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
     # select how to process based on the type of the pardir argument
     hsSrcSets = (parentContentSel."${typeOf overrideParDir}");
     # extend the set of packages with source overrides
-    hsPkgs = super.haskellPackages.extend (super.haskell.lib.packageSourceOverrides hsSrcSets);
+    hsPkgs = self.haskellPackages.extend (self.haskell.lib.packageSourceOverrides hsSrcSets);
     # name of this module
     # this = builtins.trace (self.cabal-install.patches or null) (baseNameOf thisDir);
     this = (baseNameOf thisDir);
