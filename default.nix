@@ -26,7 +26,7 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
                     (builtins.attrNames  (readDir opd));
         # construct set of names / source directories for override
         hsSrcSet = builtins.listToAttrs (map (d: {name = "${d}"; value = opd + ("/" + d);}) parentDir);
-      in hsSrcSet;
+      in if pathExists opd then hsSrcSet else {};
     # select how to process based on the type of the pardir argument
     hsSrcSets = (parentContentSel."${typeOf overrideParDir}");
     # extend the set of packages with source overrides
