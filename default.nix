@@ -42,6 +42,7 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
       withHoogle = true;
       buildInputs = [
         self.cabal-install
+        self.llvm
       ];
     }; # hsShell
 
