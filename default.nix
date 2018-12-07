@@ -28,9 +28,18 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
         hsSrcSet = builtins.listToAttrs (map (d: {name = "${d}"; value = opd + ("/" + d);}) parentDir);
       in if pathExists opd then hsSrcSet else {};
     # select how to process based on the type of the pardir argument
-    hsSrcSets = (parentContentSel."${typeOf overrideParDir}");
+    globalhsSrcSets = (parentContentSel."${typeOf overrideParDir}");
+
+    # any local overrides? These have higher precedence!
+    overridesFile = thisDir + "/overrides.nix";
+    localOverrides = if pathExists (toPath overridesFile)
+      then import overridesFile
+      else {};
+
+    hsSrcSets = globalhsSrcSets // localOverrides;
     # extend the set of packages with source overrides
     hsPkgs = self.haskellPackages.extend (self.haskell.lib.packageSourceOverrides hsSrcSets);
+
     # name of this module
     # this = builtins.trace (self.cabal-install.patches or null) (baseNameOf thisDir);
     this = (baseNameOf thisDir);
