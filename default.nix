@@ -52,6 +52,8 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
       buildInputs = [
         self.cabal-install
         self.llvm
+        hsPkgs.ghcid
+        # hsPkgs.nvim-hs-ghcid
       ];
     }; # hsShell
 
