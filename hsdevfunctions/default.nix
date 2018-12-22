@@ -33,13 +33,12 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
     # any local overrides? These have higher precedence!
     overridesFile = thisDir + "/overrides.nix";
     localOverrides = if pathExists (toPath overridesFile)
-      then import overridesFile
+      then (import overridesFile) self
       else {};
 
     hsSrcSets = globalhsSrcSets // localOverrides;
     # extend the set of packages with source overrides
     hsPkgs = self.haskellPackages.extend (self.haskell.lib.packageSourceOverrides hsSrcSets);
-
     # name of this module
     # this = builtins.trace (self.cabal-install.patches or null) (baseNameOf thisDir);
     this = (baseNameOf thisDir);
