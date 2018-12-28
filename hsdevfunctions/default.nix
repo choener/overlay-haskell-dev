@@ -37,8 +37,12 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
       else {};
 
     hsSrcSets = globalhsSrcSets // localOverrides;
+    # these are now package-ified source overrides
+    srcOverrides = self.haskell.lib.packageSourceOverrides hsSrcSets;
+    # where we disable all testing (presumably, we test during development ...)
+    noTestOverrides = (x: y: z: let a = x y z; in mapAttrs (name: drv: self.haskell.lib.dontCheck drv) a) srcOverrides;
     # extend the set of packages with source overrides
-    hsPkgs = self.haskellPackages.extend (self.haskell.lib.packageSourceOverrides hsSrcSets);
+    hsPkgs = self.haskellPackages.extend noTestOverrides;
     # name of this module
     # this = builtins.trace (self.cabal-install.patches or null) (baseNameOf thisDir);
     this = (baseNameOf thisDir);
