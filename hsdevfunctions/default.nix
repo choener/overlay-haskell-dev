@@ -56,8 +56,9 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
         self.cabal-install
         self.llvm
         hsPkgs.ghcid
+        hsPkgs.hpack
         # hsPkgs.nvim-hs-ghcid
-      ];
+      ] ++ (if self ? snack then [ self.snack.snack-exe ] else []);
     }; # hsShell
 
     # hsBuild provides the option to completely build the project and place the result symlink
