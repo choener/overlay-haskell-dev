@@ -6,7 +6,10 @@ self: super: {
 #  > with (import <nixpkgs> {});
 #  > hsDevFunctions ./.
 
-hsDevFunctions = thisDir: { overrideParDir ? null }:
+# @--argstr ghc ghc863@ will use ghc863 instead of the default ghc
+# @env-haskell-nixos --argstr ghc ghc863@ is such a call
+
+hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
   with builtins;
   let
     # check child directories below this one
@@ -42,7 +45,10 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
     # where we disable all testing (presumably, we test during development ...)
     noTestOverrides = (x: y: z: let a = x y z; in mapAttrs (name: drv: self.haskell.lib.dontCheck drv) a) srcOverrides;
     # extend the set of packages with source overrides
-    hsPkgs = self.haskellPackages.extend noTestOverrides;
+    hsPkgs = if isNull ghc
+      then self.haskellPackages.extend noTestOverrides
+      # else (getAttr ghc self.haskell.packages).extend noTestOverrides;
+      else self.haskell.packages.${ghc}.extend noTestOverrides;
     # name of this module
     # this = builtins.trace (self.cabal-install.patches or null) (baseNameOf thisDir);
     this = (baseNameOf thisDir);
@@ -55,8 +61,8 @@ hsDevFunctions = thisDir: { overrideParDir ? null }:
       buildInputs = [
         self.cabal-install
         self.llvm
-        hsPkgs.ghcid
-        hsPkgs.hpack
+        self.haskellPackages.ghcid # can use current default
+        self.haskellPackages.hpack # can use current default
         # hsPkgs.nvim-hs-ghcid
       ] ++ (if self ? snack then [ self.snack.snack-exe ] else []);
     }; # hsShell
