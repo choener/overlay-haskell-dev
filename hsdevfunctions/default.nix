@@ -47,7 +47,6 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
     # extend the set of packages with source overrides
     hsPkgs = if isNull ghc
       then self.haskellPackages.extend noTestOverrides
-      # else (getAttr ghc self.haskell.packages).extend noTestOverrides;
       else self.haskell.packages.${ghc}.extend noTestOverrides;
     # name of this module
     # this = builtins.trace (self.cabal-install.patches or null) (baseNameOf thisDir);
