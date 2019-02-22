@@ -25,7 +25,9 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
     eachOverrideParDir = opd:
       let
         # extract sibling folders that contain a default.nix file
-        parentDir = builtins.filter (d: builtins.pathExists (opd + ("/" + d + "/default.nix")))
+        parentDir = builtins.filter (d: builtins.pathExists (opd + ("/" + d + "/default.nix"))
+                                        || builtins.pathExists (opd + "/" + d + "/envhs.nix")
+                                    )
                     (builtins.attrNames  (readDir opd));
         # construct set of names / source directories for override
         hsSrcSet = builtins.listToAttrs (map (d: {name = "${d}"; value = opd + ("/" + d);}) parentDir);
@@ -42,8 +44,10 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
     hsSrcSets = globalhsSrcSets // localOverrides;
     # these are now package-ified source overrides
     srcOverrides = self.haskell.lib.packageSourceOverrides hsSrcSets;
-    # where we disable all testing (presumably, we test during development ...)
-    noTestOverrides = (x: y: z: let a = x y z; in mapAttrs (name: drv: self.haskell.lib.dontCheck drv) a) srcOverrides;
+    # where we disable all testing, except for the current package, which we benchmark as well
+    noTestOverrides = (x: y: z: let a = x y z; in mapAttrs
+      (name: drv: if name != this then self.haskell.lib.dontCheck drv else self.haskell.lib.doBenchmark drv
+      ) a) srcOverrides;
     # extend the set of packages with source overrides
     hsPkgs = if isNull ghc
       then self.haskellPackages.extend noTestOverrides
