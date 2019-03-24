@@ -78,6 +78,9 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
 
     # provide haskellPackages again
     haskellPackages = hsPkgs;
+
+    # return everything again
+    pkgs = self // { haskellPackages = hsPkgs; };
   }; # return set
 
 } # self,super
