@@ -41,6 +41,9 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
       then (import overridesFile) self
       else {};
 
+    # haskell-ci
+    haskell-ci = if builtins.pathExists <unstable> then [ (import <unstable> {}).haskell-ci ] else [];
+
     hsSrcSets = globalhsSrcSets // localOverrides;
     # these are now package-ified source overrides
     srcOverrides = self.haskell.lib.packageSourceOverrides hsSrcSets;
@@ -67,7 +70,8 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
         self.haskellPackages.ghcid # can use current default
         self.haskellPackages.hpack # can use current default
         # hsPkgs.nvim-hs-ghcid
-      ] ++ (if self ? snack then [ self.snack.snack-exe ] else []);
+      ] ++ (if self ? snack then [ self.snack.snack-exe ] else [])
+        ++ haskell-ci;
     }; # hsShell
 
     # hsBuild provides the option to completely build the project and place the result symlink
