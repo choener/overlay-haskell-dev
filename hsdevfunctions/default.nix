@@ -70,7 +70,7 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
         self.haskellPackages.ghcid # can use current default
         self.haskellPackages.hpack # can use current default
         # hsPkgs.nvim-hs-ghcid
-      ] ++ (if self ? snack then [ self.snack.snack-exe ] else [])
+      ] ++ (if self ? hssnack then [ self.hssnack.snack-exe ] else [])
         ++ haskell-ci;
     }; # hsShell
 
