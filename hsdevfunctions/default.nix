@@ -78,7 +78,10 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
     # nix-build -A hsBuild
     # this shall build and put into ./result
     # the result is a typical ./bin/; ./lib/ etc.
-    hsBuild = hsPkgs.callCabal2nix "${this}" thisDir {};
+    hsCallCabal = hsPkgs.callCabal2nix "${this}" thisDir {};
+
+    # using the callPackage mechanism, also used for static building!
+    hsCallPackage = hsPkgs.callPackage thisDir {};
 
     # provide haskellPackages again
     haskellPackages = hsPkgs;
