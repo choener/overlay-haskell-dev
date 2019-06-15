@@ -86,6 +86,21 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
     # provide haskellPackages again
     haskellPackages = hsPkgs;
 
+    # provide a statically built package
+    hsCallStatic = hsPkgs.callPackage thisDir {
+    } // {
+      isLibrary = false;
+      isExecutable = true;
+      enableSharedExecutables = false;
+      enableSharedLibraries = false;
+      configureFlags = [
+        "--ghc-option=-optl=-static"
+        "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
+        "--extra-lib-dirs=${pkgs.zlib.static}/lib"
+        "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
+      ];
+    };
+
     # return everything again
     pkgs = self // { haskellPackages = hsPkgs; };
   }; # return set
