@@ -2,7 +2,7 @@ self: super: {
 
 hsDevFunctions = ((import ./hsdevfunctions) self super).hsDevFunctions;
 
-snackify = (import ./snack) self super;
+#snackify = (import ./snack) self super;
 
 vimPlugins = super.vimPlugins // {
   ghcid = self.vimUtils.buildVimPlugin {
