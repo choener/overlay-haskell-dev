@@ -82,24 +82,31 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
 
     # using the callPackage mechanism, also used for static building!
     hsCallPackage = hsPkgs.callPackage thisDir {};
+    hsCallTest = self.haskell.lib.justStaticExecutables (hsPkgs.callPackage thisDir {});
 
     # provide haskellPackages again
     haskellPackages = hsPkgs;
 
     # provide a statically built package
-    hsCallStatic = hsPkgs.callPackage thisDir {
-    } // {
-      isLibrary = false;
-      isExecutable = true;
-      enableSharedExecutables = false;
-      enableSharedLibraries = false;
-      configureFlags = [
-        "--ghc-option=-optl=-static"
-        "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
-        "--extra-lib-dirs=${pkgs.zlib.static}/lib"
-        "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
-      ];
-    };
+    hsCallStatic =
+      let pkgs = self // { haskellPackages = hsPkgs; };
+          ps = pkgs // { e2fsprogs = builtins.error "using e2fsprogs override" (pkgs.e2fsprogs.overrideAttrs (old: {doCheck = false;})); };
+          thisDeriv = ps.haskell.lib.overrideCabal (hsPkgs.callPackage thisDir {}) (drv: staticFlags);
+          staticFlags =
+            { isLibrary = false;
+              isExecutable = true;
+              enableSharedExecutables = false;
+              enableSharedLibraries = false;
+              enableLibraryProfiling = false;
+              configureFlags = [
+                "--ghc-option=-optl=-static"
+                "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
+                "--extra-lib-dirs=${pkgs.zlib.static}/lib"
+#                "--extra-lib-dirs=${pkgs.glibc.static}/lib"
+                "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
+              ];
+            };
+      in  builtins.trace ("no trace") thisDeriv;
 
     # return everything again
     pkgs = self // { haskellPackages = hsPkgs; };
