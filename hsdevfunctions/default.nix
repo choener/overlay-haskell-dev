@@ -44,17 +44,31 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
     # haskell-ci
     haskell-ci = if builtins.pathExists <unstable> then [ (import <unstable> {}).haskell-ci ] else [];
 
-    hsSrcSets = globalhsSrcSets // localOverrides;
+    # hsSrcSets = globalhsSrcSets // localOverrides;
     # these are now package-ified source overrides
-    srcOverrides = self.haskell.lib.packageSourceOverrides hsSrcSets;
+    #srcOverrides = self.haskell.lib.packageSourceOverrides hsSrcSets;
     # where we disable all testing, except for the current package, which we benchmark as well
-    noTestOverrides = (x: y: z: let a = x y z; in mapAttrs
-      (name: drv: if name != this then self.haskell.lib.dontCheck drv else self.haskell.lib.doBenchmark drv
-      ) a) srcOverrides;
+    #noTestOverrides = (x: y: z: let a = x y z; in mapAttrs
+    #  (name: drv: if name != this then self.haskell.lib.dontCheck drv else self.haskell.lib.doBenchmark drv
+    #  ) a) srcOverrides;
     # extend the set of packages with source overrides
-    hsPkgs = if isNull ghc
-      then self.haskellPackages.extend noTestOverrides
-      else self.haskell.packages.${ghc}.extend noTestOverrides;
+    #hsPkgs = if isNull ghc
+    #  then self.haskellPackages.extend noTestOverrides
+    #  else self.haskell.packages.${ghc}.extend noTestOverrides;
+    #
+    # two lines below don't work because we don't capture interdependencies between our local packages!
+    #
+    #srcOverrides = mapAttrs (name: path: super.haskellPackages.callPackage path {}) hsSrcSets;
+    #noTestOverrides = mapAttrs (name: drv: if name != this then self.haskell.lib.dontCheck drv else self.haskell.lib.doBenchmark drv) srcOverrides;
+    #
+    hsPkgs = self.haskellPackages.override {
+      overrides = hself: hsuper:
+        ( mapAttrs (name: drv: if name != this then self.haskell.lib.dontCheck drv else self.haskell.lib.doBenchmark drv)
+          (mapAttrs (name: path: hself.callPackage path {}) globalhsSrcSets)
+        ) // ( if pathExists (toPath (thisDir + "/overrides/"))
+                then (self.haskell.lib.packagesFromDirectory { directory = (thisDir + "/overrides/"); }) hself hsuper else {}
+        );
+    };
     # name of this module
     # this = builtins.trace (self.cabal-install.patches or null) (baseNameOf thisDir);
     this = (baseNameOf thisDir);
@@ -80,18 +94,22 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
     # the result is a typical ./bin/; ./lib/ etc.
     hsCallCabal = hsPkgs.callCabal2nix "${this}" thisDir {};
 
-    # using the callPackage mechanism, also used for static building!
-    hsCallPackage = hsPkgs.callPackage thisDir {};
-    hsCallTest = self.haskell.lib.justStaticExecutables (hsPkgs.callPackage thisDir {});
-
     # provide haskellPackages again
     haskellPackages = hsPkgs;
 
     # provide a statically built package
+    #
+    # nix-build --arg overrideParDir "~/Documents/University/devel" static.nix -A hsCallStatic
+    #
+    # cat static.nix:
+    # with (import <nixpkgs> {}).pkgsMusl;
+    # hsDevFunctions ./.
+    #
+    # TODO llvm
+    #
     hsCallStatic =
-      let pkgs = self // { haskellPackages = hsPkgs; };
-          ps = pkgs // { e2fsprogs = builtins.error "using e2fsprogs override" (pkgs.e2fsprogs.overrideAttrs (old: {doCheck = false;})); };
-          thisDeriv = ps.haskell.lib.overrideCabal (hsPkgs.callPackage thisDir {}) (drv: staticFlags);
+      let ps = self // { haskellPackages = hsPkgs; };
+          thisDeriv = ps.haskell.lib.dontCheck (ps.haskell.lib.dontBenchmark (ps.haskell.lib.overrideCabal (ps.haskellPackages.callPackage thisDir {}) (drv: staticFlags)));
           staticFlags =
             { isLibrary = false;
               isExecutable = true;
@@ -100,13 +118,12 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
               enableLibraryProfiling = false;
               configureFlags = [
                 "--ghc-option=-optl=-static"
-                "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
-                "--extra-lib-dirs=${pkgs.zlib.static}/lib"
-#                "--extra-lib-dirs=${pkgs.glibc.static}/lib"
-                "--extra-lib-dirs=${pkgs.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
+                "--extra-lib-dirs=${ps.gmp6.override { withStatic = true; }}/lib"
+                "--extra-lib-dirs=${ps.zlib.static}/lib"
+                "--extra-lib-dirs=${ps.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
               ];
             };
-      in  builtins.trace ("no trace") thisDeriv;
+      in  thisDeriv;
 
     # return everything again
     pkgs = self // { haskellPackages = hsPkgs; };
