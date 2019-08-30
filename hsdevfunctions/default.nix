@@ -44,6 +44,14 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
     # haskell-ci
     haskell-ci = if builtins.pathExists <unstable> then [ (import <unstable> {}).haskell-ci ] else [];
 
+    # my own little tool
+    cabalghcisrc = builtins.fetchGit {
+      url = let local = ~/Documents/University/devel/ghcicabal;
+            in  (if builtins.pathExists local then local else https://github.com/choener/ghcicabal);
+      ref = "master";
+    };
+    cabalghci = self.haskellPackages.callPackage cabalghcisrc {};
+
     # hsSrcSets = globalhsSrcSets // localOverrides;
     # these are now package-ified source overrides
     #srcOverrides = self.haskell.lib.packageSourceOverrides hsSrcSets;
@@ -83,6 +91,7 @@ hsDevFunctions = thisDir: { overrideParDir ? null, ghc ? null }:
         self.llvm
         self.haskellPackages.ghcid # can use current default
         self.haskellPackages.hpack # can use current default
+        cabalghci
         # hsPkgs.nvim-hs-ghcid
       ] # ++ (if self ? hssnack then [ self.hssnack.snack-exe ] else [])
         ++ haskell-ci;
