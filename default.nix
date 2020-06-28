@@ -22,12 +22,12 @@ vimPlugins = super.vimPlugins // {
 # easy dependency management with niv (not just for Haskell stuff)
 # This is a set, niv is under @niv.niv@
 
-niv = import (self.fetchFromGitHub {
-    owner  = "nmattia";
-    repo   = "niv";
-    rev    = "8b7b70465c130d8d7a98fba1396ad1481daee518";
-    sha256 = "0fgdrxn2vzpnzr6pxaiyn5zzbd812c6f7xjjhfir0kpzamjnxwwl";
-  }) {};
+#niv = import (self.fetchFromGitHub {
+#    owner  = "nmattia";
+#    repo   = "niv";
+#    rev    = "8b7b70465c130d8d7a98fba1396ad1481daee518";
+#    sha256 = "0fgdrxn2vzpnzr6pxaiyn5zzbd812c6f7xjjhfir0kpzamjnxwwl";
+#  }) {};
 
 }
 
